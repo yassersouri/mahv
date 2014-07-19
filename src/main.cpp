@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 		imgadr = "/Users/yasser/sci-repo/opencv/samples/cpp/pic4.png";
 	}
 
-	cout << imgadr;
+	cout << imgadr << endl;
 
 	return 0;
 }
