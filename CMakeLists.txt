@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+PROJECT( mahv )
+FIND_PACKAGE( OpenCV REQUIRED )
+ADD_EXECUTABLE( main.app src/main.cpp )
+TARGET_LINK_LIBRARIES( main.app  ${OpenCV_LIBS} )
