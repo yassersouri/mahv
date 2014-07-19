@@ -29,3 +29,6 @@ install_manifest.txt
 
 # Mac
 *.DS_Store
+
+# Eclipse
+Debug

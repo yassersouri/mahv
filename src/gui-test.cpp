@@ -17,7 +17,15 @@ int main(int argc, char **argv) {
 		imgadr = "/Users/yasser/sci-repo/opencv/samples/cpp/pic4.png";
 	}
 
-	cout << imgadr;
+	cv::Mat img = cv::imread(imgadr, 1);
+
+	if (img.empty()) {
+		cout << 'PROB';
+		return 1;
+	}
+
+	cv::imshow("test", img);
+	cv::waitKey(0);
 
 	return 0;
 }
