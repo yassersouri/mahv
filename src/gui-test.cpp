@@ -21,6 +21,8 @@ vector<cv::Point> *points = new vector<cv::Point>();
 int keyPressed = -1;
 char charTyped = ' ';
 
+cv::Mat imgOriginal, imgDup, imgDraw;
+
 static void onMouse(int event, int x, int y, int, void*) {
 	switch (mode) {
 		case MODE_NO_SELECTION:
@@ -54,18 +56,22 @@ int main(int argc, char **argv) {
 		imgadr = "/Users/yasser/sci-repo/opencv/samples/cpp/pic4.png";
 	}
 
-	cv::Mat img = cv::imread(imgadr, 1);
+	imgOriginal = cv::imread(imgadr, 1);
 
-	if (img.empty()) {
+	if (imgOriginal.empty()) {
 		cerr << "PROB: Cannot Load File" << endl;
 		return 1;
 	}
 
+	imgOriginal.copyTo(imgDup);
+	imgOriginal.copyTo(imgDraw);
+
+	cv::namedWindow(guiWindowName, cv::WINDOW_AUTOSIZE);
+	cv::setMouseCallback(guiWindowName, onMouse);
+	cv::moveWindow(guiWindowName, 200, 300);
+
 	while(1) {
-		cv::namedWindow(guiWindowName, cv::WINDOW_AUTOSIZE);
-		cv::setMouseCallback(guiWindowName, onMouse);
-		cv::imshow(guiWindowName, img);
-		cv::moveWindow(guiWindowName, 200, 300);
+		cv::imshow(guiWindowName, imgDraw);
 		keyPressed = cv::waitKey(0);
 
 		bool toExit = false;
