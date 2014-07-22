@@ -17,23 +17,32 @@ const char ACTION_UNDO = 'u';
 map<char, string> *modeDescriptions = new map<char, string>;
 
 char mode = MODE_NO_SELECTION;
-vector<cv::Point> *points = new vector<cv::Point>();
+vector<cv::Point_<int> > *points = new vector<cv::Point_<int> >();
 int keyPressed = -1;
 char charTyped = ' ';
 
 cv::Mat imgOriginal, imgDup, imgDraw;
+string guiWindowName = "Select Target Region";
+
+void draw(cv::Mat &imgo, cv::Mat &img, vector<cv::Point_<int> > *points) {
+	imgo.copyTo(img);
+//	cv::fillPoly(img, (const cv::Point**) points, new array[points->size(), 1, cv::Scalar(0, 0, 255), 0, 0, 0);
+	for (int i = 0; i < points->size(); ++i) {
+		cv::circle(img, points->at(i), 3, cv::Scalar(0, 0, 255), 3);
+	}
+}
 
 static void onMouse(int event, int x, int y, int, void*) {
 	switch (mode) {
 		case MODE_NO_SELECTION:
 			if (event == cv::EVENT_LBUTTONDOWN) {
 				mode = MODE_SELECTION;
-				points->push_back(cv::Point(x, y));
+				points->push_back(cv::Point_<int>(x, y));
 			}
 			break;
 		case MODE_SELECTION:
 			if (event == cv::EVENT_LBUTTONDOWN) {
-				points->push_back(cv::Point(x, y));
+				points->push_back(cv::Point_<int>(x, y));
 			} else if(event == cv::EVENT_RBUTTONDOWN) {
 				mode = MODE_DONE;
 			}
@@ -41,14 +50,14 @@ static void onMouse(int event, int x, int y, int, void*) {
 		default:
 			break;
 	}
-
+	draw(imgDup, imgDraw, points);
+	cv::imshow(guiWindowName, imgDraw);
 	cout << mode << '|' << points->size() << endl;
 }
 
 int main(int argc, char **argv) {
 
 	string imgadr;
-	string guiWindowName = "Select Target Region";
 
 	if (argc > 1) {
 		imgadr = argv[1];
@@ -106,7 +115,7 @@ int main(int argc, char **argv) {
 					break;
 			}
 		}
-//		FIXME: REDRAW.
+		draw(imgDup, imgDraw, points);
 	}
 
 	return 0;
