@@ -10,6 +10,7 @@ using namespace std;
 int main(int argc, char **argv) {
 
 	string imgadr;
+	string guiWindowName = "Select Target Region";
 
 	if (argc > 1) {
 		imgadr = argv[1];
@@ -24,7 +25,9 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	cv::imshow("test", img);
+	cv::namedWindow(guiWindowName, cv::WINDOW_AUTOSIZE);
+	cv::imshow(guiWindowName, img);
+	cv::moveWindow(guiWindowName, 200, 300);
 	cv::waitKey(0);
 
 	return 0;
