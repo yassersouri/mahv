@@ -7,43 +7,64 @@
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
+using namespace cv;
 
 const char MODE_NO_SELECTION = 'n';
 const char MODE_SELECTION = 's';
 const char MODE_DONE = 'd';
-
 const char ACTION_UNDO = 'u';
 
 map<char, string> *modeDescriptions = new map<char, string>;
-
 char mode = MODE_NO_SELECTION;
-vector<cv::Point_<int> > *points = new vector<cv::Point_<int> >();
+vector<Point> *points = new vector<Point>();
 int keyPressed = -1;
 char charTyped = ' ';
 
-cv::Mat imgOriginal, imgDup, imgDraw;
+Mat imgOriginal, imgDup, imgDraw;
 string guiWindowName = "Select Target Region";
 
-void draw(cv::Mat &imgo, cv::Mat &img, vector<cv::Point_<int> > *points) {
+void draw(Mat &imgo, Mat &img, vector<Point> *points) {
+	bool drawPoints = false;
 	imgo.copyTo(img);
-//	cv::fillPoly(img, (const cv::Point**) points, new array[points->size(), 1, cv::Scalar(0, 0, 255), 0, 0, 0);
+
+	Mat mask(imgo.rows, imgo.cols, CV_8UC3, Scalar(0, 0, 0));
+	Mat White(imgo.rows, imgo.cols, CV_8UC3, Scalar(255, 255, 255));
+
+	const int size = points->size();
+	Point *newPoints = new Point[size];
+
 	for (int i = 0; i < points->size(); ++i) {
-		cv::circle(img, points->at(i), 3, cv::Scalar(0, 0, 255), 3);
+		Point thePoint = points->at(i);
+		newPoints[i] = thePoint;
+		if (drawPoints) {
+			circle(img, thePoint, 3, Scalar(30, 25, 200), 2);
+		}
 	}
+	fillPoly(mask, (const Point**) &newPoints, &size, 1, Scalar(255, 255, 255));
+
+	Mat notMask, notMaskPart, nonMaskFinal;
+	bitwise_not(mask, notMask);
+	bitwise_and(imgo, notMask, notMaskPart);
+	add(mask, notMaskPart, nonMaskFinal);
+
+	float alpha = 0.2;
+	float beta = 1 - alpha;
+
+	addWeighted(imgo, alpha, nonMaskFinal, beta, 0.0, img);
 }
 
 static void onMouse(int event, int x, int y, int, void*) {
 	switch (mode) {
 		case MODE_NO_SELECTION:
-			if (event == cv::EVENT_LBUTTONDOWN) {
+			if (event == EVENT_LBUTTONDOWN) {
 				mode = MODE_SELECTION;
-				points->push_back(cv::Point_<int>(x, y));
+				points->push_back(Point(x, y));
 			}
 			break;
 		case MODE_SELECTION:
-			if (event == cv::EVENT_LBUTTONDOWN) {
-				points->push_back(cv::Point_<int>(x, y));
-			} else if(event == cv::EVENT_RBUTTONDOWN) {
+			if (event == EVENT_LBUTTONDOWN) {
+				points->push_back(Point(x, y));
+			} else if(event == EVENT_RBUTTONDOWN) {
 				mode = MODE_DONE;
 			}
 			break;
@@ -51,7 +72,9 @@ static void onMouse(int event, int x, int y, int, void*) {
 			break;
 	}
 	draw(imgDup, imgDraw, points);
-	cv::imshow(guiWindowName, imgDraw);
+	imshow(guiWindowName, imgDraw);
+
+	// FIXME: Debug output, remove later
 	cout << mode << '|' << points->size() << endl;
 }
 
@@ -65,7 +88,7 @@ int main(int argc, char **argv) {
 		imgadr = "/Users/yasser/sci-repo/opencv/samples/cpp/pic4.png";
 	}
 
-	imgOriginal = cv::imread(imgadr, 1);
+	imgOriginal = imread(imgadr, 1);
 
 	if (imgOriginal.empty()) {
 		cerr << "PROB: Cannot Load File" << endl;
@@ -75,13 +98,13 @@ int main(int argc, char **argv) {
 	imgOriginal.copyTo(imgDup);
 	imgOriginal.copyTo(imgDraw);
 
-	cv::namedWindow(guiWindowName, cv::WINDOW_AUTOSIZE);
-	cv::setMouseCallback(guiWindowName, onMouse);
-	cv::moveWindow(guiWindowName, 200, 300);
+	namedWindow(guiWindowName, WINDOW_AUTOSIZE);
+	setMouseCallback(guiWindowName, onMouse);
+	moveWindow(guiWindowName, 200, 300);
 
 	while(1) {
-		cv::imshow(guiWindowName, imgDraw);
-		keyPressed = cv::waitKey(0);
+		imshow(guiWindowName, imgDraw);
+		keyPressed = waitKey(0);
 
 		bool toExit = false;
 		if ((keyPressed & 255) == 27) {
