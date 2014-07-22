@@ -91,6 +91,9 @@ int main(int argc, char **argv) {
 				case ACTION_UNDO:
 					if (mode == MODE_SELECTION) {
 						points->pop_back();
+						if (points->size() == 0) {
+							mode = MODE_NO_SELECTION;
+						}
 					}
 					break;
 				default:
