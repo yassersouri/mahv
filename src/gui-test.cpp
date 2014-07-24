@@ -57,6 +57,12 @@ void draw(Mat &imgo, Mat &img, vector<Point> *points) {
 		Point pt2 = points->at(i);
 		line(img, pt1, pt2, Scalar(0, 0, 255), 1);
 	}
+
+	if (mode == MODE_DONE) {
+		if (points->size() > 2) {
+			line(img, points->at(points->size() -1 ), points->at(0), Scalar(0, 0, 255), 1);
+		}
+	}
 }
 
 static void onMouse(int event, int x, int y, int, void*) {
