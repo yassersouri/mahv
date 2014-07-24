@@ -51,6 +51,12 @@ void draw(Mat &imgo, Mat &img, vector<Point> *points) {
 	float beta = 1 - alpha;
 
 	addWeighted(imgo, alpha, nonMaskFinal, beta, 0.0, img);
+
+	for (int i = 1; i < points->size(); ++i) {
+		Point pt1 = points->at(i-1);
+		Point pt2 = points->at(i);
+		line(img, pt1, pt2, Scalar(0, 0, 255), 1);
+	}
 }
 
 static void onMouse(int event, int x, int y, int, void*) {
