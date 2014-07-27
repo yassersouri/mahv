@@ -85,9 +85,6 @@ static void onMouse(int event, int x, int y, int, void*) {
 	}
 	draw(imgDup, imgDraw, points);
 	imshow(guiWindowName, imgDraw);
-
-	// FIXME: Debug output, remove later
-	cout << mode << '|' << points->size() << endl;
 }
 
 int main(int argc, char **argv) {
@@ -97,7 +94,7 @@ int main(int argc, char **argv) {
 	if (argc > 1) {
 		imgadr = argv[1];
 	} else {
-		imgadr = "/Users/yasser/sci-repo/opencv/samples/cpp/pic4.png";
+		imgadr = "/Users/yasser/sharif-repo/mahv/benchmark-dataset/Bear-0-original.jpg";
 	}
 
 	imgOriginal = imread(imgadr, 1);
@@ -112,7 +109,6 @@ int main(int argc, char **argv) {
 
 	namedWindow(guiWindowName, WINDOW_AUTOSIZE);
 	setMouseCallback(guiWindowName, onMouse);
-	moveWindow(guiWindowName, 200, 300);
 
 	while(1) {
 		imshow(guiWindowName, imgDraw);
