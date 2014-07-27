@@ -1,20 +1,41 @@
 #include <iostream>
 #include <string>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include <ncurses.h>
-
 
 using namespace std;
 
-int main(int argc, char **argv) {
-
+void runCurses() {
+	int ch;
 	initscr();
-	printw("Salam");
+	raw();
+	keypad(stdscr, true);
+	noecho();
+
+	printw("Type \n");
+
+	ch = getch();
+
+	if (ch == KEY_F(1)) {
+		printw("F1 Pressed");
+	} else {
+		printw("The key pressed is ");
+		attron(A_BOLD);
+		printw("%c", ch);
+		attroff(A_BOLD);
+	}
+
 	refresh();
 	getch();
 	endwin();
+}
+
+int main(int argc, char **argv) {
+
+	if (argc > 1) {
+		cout << "going to be implemented" << endl;
+	} else {
+		runCurses();
+	}
 
 	return 0;
 }
