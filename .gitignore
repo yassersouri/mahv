@@ -32,3 +32,6 @@ install_manifest.txt
 
 # Eclipse
 Debug
+
+# python
+*.pyc
