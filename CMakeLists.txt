@@ -15,5 +15,5 @@ foreach(f ${file_names})
     set(app_name "${f}${target_ext}")
     
     add_executable( ${app_name} ${source_name})
-    target_link_libraries( ${app_name} ${OpenCV_LIBS})
+    target_link_libraries( ${app_name} ${OpenCV_LIBS} NCURSES)
 endforeach(f)
