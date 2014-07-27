@@ -8,11 +8,12 @@ REPO_ROOT = os.path.dirname(EXTRAS_PATH)
 BENCHMARK_BASE_PATH = 'benchmark-dataset'
 BENCHMARK_BASE_PATH = os.path.join(REPO_ROOT, BENCHMARK_BASE_PATH)
 
-FILE_TO_GET_FROM = 'Dragonfly-1-masked.jpg'
+FILE_MASK = 'Dragonfly-1-masked.jpg'
+FILE_ORIG = 'Dragonfly-0-original.jpg'
 
 
 def main():
-    file_path = os.path.join(BENCHMARK_BASE_PATH, FILE_TO_GET_FROM)
+    file_path = os.path.join(BENCHMARK_BASE_PATH, FILE_MASK)
     mask = get_mask(file_path)
 
     cv2.imshow('m', mask)
