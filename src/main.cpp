@@ -5,23 +5,14 @@
 
 using namespace std;
 
-void print_menu(WINDOW *menu_win, int highlight);
+void print_menu(WINDOW *menu_win, int highlight, vector<string> *choices);
 
-//char *choices[] = {
-//	"Choice 1",
-//	"Choice 2",
-//	"Choice 3",
-//	"Exit",
-//};
-
-vector<string> *choices = new vector<string>();
-int n_choices;
-
-void runCurses(char *welcomeString, char *statusString, vector<string> *choices) {
+int runCurses(const char *welcomeString, const char *statusString, vector<string> *choices) {
 	WINDOW *menu_win;
 	int highlight = 1;
 	int choice = 0;
 	int c;
+	bool done = false;
 
 	initscr();
 	clear();
@@ -39,45 +30,44 @@ void runCurses(char *welcomeString, char *statusString, vector<string> *choices)
 
 	menu_win = newwin(HEIGHT, WIDTH, starty, startx);
 	keypad(menu_win, TRUE);
-	mvprintw(0, 0, "Use arrows");
+	mvprintw(0, 0, welcomeString);
 	refresh();
-	print_menu(menu_win, highlight);
+	print_menu(menu_win, highlight, choices);
 	while(1) {
 		c = wgetch(menu_win);
 		switch (c) {
 			case KEY_UP:
 				if (highlight == 1)
-					highlight = n_choices;
+					highlight = choices->size();
 				else
 					--highlight;
+				mvprintw(starty + HEIGHT, 0, statusString, highlight, choices->at(highlight - 1).c_str());
+				refresh();
 				break;
 			case KEY_DOWN:
-				if (highlight == n_choices)
+				if (highlight == choices->size())
 					highlight = 1;
 				else
 					++highlight;
+				mvprintw(starty + HEIGHT, 0, statusString, highlight, choices->at(highlight - 1).c_str());
+				refresh();
 				break;
 			case 10:
 				choice = highlight;
-				break;
-			default:
-				mvprintw(startx + HEIGHT + 2, 0, "You choose choice %d with choice string %s\n", choice, choices->at(choice - 1).c_str());
-				refresh();
+				done = true;
 				break;
 		}
-		print_menu(menu_win, highlight);
-		if (choice != 0)
+		print_menu(menu_win, highlight, choices);
+		if (done)
 			break;
 	}
 	clrtoeol();
-	getch();
 	refresh();
 	endwin();
-
-	cout << "ENDED" << endl;
+	return choice;
 }
 
-void print_menu(WINDOW *menu_win, int highlight) {
+void print_menu(WINDOW *menu_win, int highlight, vector<string> *choices) {
 	int x, y, i;
 
 	x = 2;
@@ -85,7 +75,7 @@ void print_menu(WINDOW *menu_win, int highlight) {
 
 	box(menu_win, 0, 0);
 
-	for (i = 0; i < n_choices; ++i) {
+	for (i = 0; i < choices->size(); ++i) {
 		if (highlight == i + 1) {
 			wattron(menu_win, A_REVERSE);
 			mvwprintw(menu_win, y, x, "%s", choices->at(i).c_str());
@@ -99,18 +89,24 @@ void print_menu(WINDOW *menu_win, int highlight) {
 }
 
 int main(int argc, char **argv) {
+	vector<string> *choices = new vector<string>();
 	choices->push_back("Choice 1");
 	choices->push_back("Choice 2");
 	choices->push_back("Choice 3");
 	choices->push_back("Exit");
 
-	n_choices = choices->size();
+	string welcomString = "Use arrays to select";
+	string statusString = "You choose choice %d with choice string %s\n";
+
+	const char *ws = welcomString.c_str();
+	const char *ss = statusString.c_str();
+
 	if (argc > 1) {
 		cout << "going to be implemented" << endl;
 	} else {
-		runCurses();
+		int choice = runCurses(ws, ss, choices);
+		cout << "selected " << choice << endl;
 	}
-
 	return 0;
 }
 
