@@ -7,9 +7,6 @@ using namespace std;
 
 void print_menu(WINDOW *menu_win, int highlight);
 
-#define WIDTH 40
-#define HEIGHT 10
-
 //char *choices[] = {
 //	"Choice 1",
 //	"Choice 2",
@@ -20,7 +17,7 @@ void print_menu(WINDOW *menu_win, int highlight);
 vector<string> *choices = new vector<string>();
 int n_choices;
 
-void runCurses() {
+void runCurses(char *welcomeString, char *statusString, vector<string> *choices) {
 	WINDOW *menu_win;
 	int highlight = 1;
 	int choice = 0;
@@ -30,8 +27,15 @@ void runCurses() {
 	clear();
 	noecho();
 	cbreak();
-	int startx = (80 - WIDTH) / 2;
-	int starty = (24 - HEIGHT) / 2;
+	int xleave = 6;
+	int yleave = 10;
+	int WIDTH;
+	int HEIGHT;
+	getmaxyx(stdscr, HEIGHT, WIDTH);
+	HEIGHT = HEIGHT - xleave;
+	WIDTH = WIDTH - yleave;
+	int startx = (xleave) / 2;
+	int starty = (yleave) / 2;
 
 	menu_win = newwin(HEIGHT, WIDTH, starty, startx);
 	keypad(menu_win, TRUE);
@@ -57,7 +61,7 @@ void runCurses() {
 				choice = highlight;
 				break;
 			default:
-				mvprintw(24, 0, "Character pressed is = %3d Hopefully it can be printed as '%c'", c, c);
+				mvprintw(startx + HEIGHT + 2, 0, "You choose choice %d with choice string %s\n", choice, choices->at(choice - 1).c_str());
 				refresh();
 				break;
 		}
@@ -65,7 +69,6 @@ void runCurses() {
 		if (choice != 0)
 			break;
 	}
-	mvprintw(23, 0, "You choose choice %d with choice string %s\n", choice, choices->at(choice - 1).c_str());
 	clrtoeol();
 	getch();
 	refresh();
