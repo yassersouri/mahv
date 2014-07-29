@@ -1,0 +1,1 @@
+add_library(json11 json11.cpp)

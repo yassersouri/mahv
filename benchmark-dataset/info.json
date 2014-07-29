@@ -1,0 +1,9 @@
+{
+    "benchmarks" : [
+        "Bear",
+        "Copter",
+        "Dragonfly",
+        "Lands",
+        "Plane"
+    ]
+}

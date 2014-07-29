@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
+#include <fstream>
 #include <vector>
 #include <ncurses.h>
+#include "json11.hpp"
 
 using namespace std;
 
@@ -89,23 +91,37 @@ void print_menu(WINDOW *menu_win, int highlight, vector<string> *choices) {
 }
 
 int main(int argc, char **argv) {
-	vector<string> *choices = new vector<string>();
-	choices->push_back("Choice 1");
-	choices->push_back("Choice 2");
-	choices->push_back("Choice 3");
-	choices->push_back("Exit");
+	vector<string> *mainChoices = new vector<string>();
+	mainChoices->push_back("Benchmark");
+	mainChoices->push_back("Exit");
 
-	string welcomString = "Use arrays to select";
-	string statusString = "You choose choice %d with choice string %s\n";
+	string welcomString = "Use arrays to select\nSelect What action you like to make";
+	string statusString = "You choose number %d with choice name: %s\n";
 
 	const char *ws = welcomString.c_str();
 	const char *ss = statusString.c_str();
 
+	string fileAddress = "/Users/yasser/sharif-repo/mahv/benchmark-dataset/info.json";
+	string fileContent;
+	string err;
+
+	ifstream ifs(fileAddress);
+	fileContent.assign( (istreambuf_iterator<char>(ifs)), (istreambuf_iterator<char>()));
+
+	json11::Json benchmarks = json11::Json::parse(fileContent, err);
+
+	cout << benchmarks.dump() << endl;
+
 	if (argc > 1) {
 		cout << "going to be implemented" << endl;
 	} else {
-		int choice = runCurses(ws, ss, choices);
-		cout << "selected " << choice << endl;
+		int choice = runCurses(ws, ss, mainChoices);
+		if (choice == 1) {
+
+		} else {
+			cout << "Exit Selected!" << endl;
+			return 0;
+		}
 	}
 	return 0;
 }
