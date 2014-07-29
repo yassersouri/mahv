@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <opencv2/opencv.hpp>
 #include "json11.hpp"
 #include "ncursesHelper.cpp"
 #include "choicesHelper.cpp"
@@ -26,7 +27,13 @@ int main(int argc, char **argv) {
 		int choice = runCurses(ws, ss, mainChoices);
 		if (choice == 1) {
 			int choice = runCurses(bwcs, ss, benchChoices);
-			cout << choice << endl;
+			string benchName = benchChoices->at(choice - 1);
+			cv::Mat orig, mask;
+
+			getOrigMask(benchName, orig, mask);
+
+			cv::imshow("tst", mask);
+			cv::waitKey(0);
 		} else {
 			cout << "Exit Selected!" << endl;
 			return 0;
