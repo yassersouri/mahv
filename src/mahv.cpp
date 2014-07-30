@@ -24,9 +24,37 @@ const cv::SparseMat::Node *calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat
 float calculateDataTerm(cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int i, int j, int offset, float alpha);
 float calculateConfidenceTerm(cv::Mat &confidence, int i, int j, int windowSize, int offset);
 void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int windowSize);
+void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha);
+
+void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha) {
+	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
+//	orig.setTo(cv::Scalar(0), mask);
+	orig.convertTo(origFloat, CV_32FC3);
+	int offset = windowSize / 2;
+	cv::copyMakeBorder(origFloat, image_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
+	cv::copyMakeBorder(mask, mask_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
+
+	cv::Mat dx, dy, nx, ny, image_padded_gray;
+	cv::cvtColor(image_padded, image_padded_gray, COLOR_BGR2GRAY);
+	cv::Sobel(image_padded_gray, dx, CV_32F, 1, 0, 3, 1, 0, cv::BORDER_CONSTANT);
+	cv::Sobel(image_padded_gray, dy, CV_32F, 0, 1, 3, -1, 0, cv::BORDER_CONSTANT);
+	cv::Sobel(mask_padded, nx, CV_32F, 1, 0, 3, 1, 0, cv::BORDER_CONSTANT);
+	cv::Sobel(mask_padded, ny, CV_32F, 0, 1, 3, 1, 0, cv::BORDER_CONSTANT);
+
+	dataTerm = cv::Mat::zeros(image_padded.rows, image_padded.cols, CV_32FC1);
+
+	for (int x = 0; x != mask_padded.rows; ++x) {
+		for (int y = 0; y != mask_padded.cols; ++y) {
+			if (mask_padded.at<unsigned char>(x, y) != 0) {
+				float d_term = calculateDataTerm(dx, dy, nx, ny, x, y, offset, alpha);
+				dataTerm.at<float>(x, y) = d_term;
+			}
+		}
+	}
+}
 
 void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int windowSize) {
-	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1;
+	cv::Mat origFloat, image_padded, mask_padded, mask_max_1;
 	orig.convertTo(origFloat, CV_32FC3);
 	int offset = windowSize / 2;
 	cv::copyMakeBorder(origFloat, image_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
@@ -44,6 +72,8 @@ void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int window
 		}
 	}
 }
+
+
 
 cv::Mat calculateFillFront(cv::Mat &mask) {
 	cv::Mat diskElem = cv::Mat::ones(cv::Size(3, 3), CV_8UC1);
