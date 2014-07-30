@@ -37,18 +37,11 @@ int main(int argc, char **argv) {
 			orig.copyTo(origBU);
 
 			// do the actual work
-//			doMahv(orig, mask, result, 9);
-
-			cv::Mat confidence, dataTerm;
-			visConfidence(confidence, orig, mask, 25);
-			visDataTerm(dataTerm, orig, mask, 25, 2000000);
+			doMahv(orig, mask, result, 9);
 
 			// display them all
 			cv::imshow("orig", origBU);
-			cv::imshow("mask", mask);
-//			cv::imshow("result", result);
-			cv::imshow("confidence", confidence);
-			cv::imshow("data term", dataTerm);
+			cv::imshow("result", result);
 			cv::waitKey(0);
 		} else {
 			cout << "Exit Selected!" << endl;
