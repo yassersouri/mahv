@@ -227,7 +227,8 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 		//calculate the point on the fill front with the maximum priority
 		const cv::SparseMat::Node *p = calculateMaxPriorityPoint(fillFront, confidence, dx, dy, nx, ny, windowSize, 255);
-		break;
+
+		//find the best patch to place here
 	}
 
 	//FIXME: copy the non-padded parts of image_padded to result
