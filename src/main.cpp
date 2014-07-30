@@ -28,25 +28,32 @@ int main(int argc, char **argv) {
 		if (choice == 1) {
 			int choice = runCurses(bwcs, ss, benchChoices);
 			string benchName = benchChoices->at(choice - 1);
-			cv::Mat orig, mask, fillFront;
+			cv::Mat orig, mask, fillFront, result, origBU;
 
+			// retrieve the original image and mask from the benchmark set.
 			getOrigMask(benchName, orig, mask);
 
+			//back up the original image
+			orig.copyTo(origBU);
+
+			// do the actual work
+			doMahv(orig, mask, result, 9);
+
+			// unnecessary stuff
 			fillFront = calculateFillFront(mask);
 			cv::SparseMat sparseFillFront = calculateSparseFillFront(fillFront);
-
 			SparseMatConstIterator
 				it = sparseFillFront.begin(),
 				it_end = sparseFillFront.end();
-
 			for(; it != it_end; ++it) {
 				const SparseMat::Node *node = it.node();
-				orig.at<Vec3b>(node->idx[0], node->idx[1]) = Vec3b(0, 0, 255);
+				origBU.at<Vec3b>(node->idx[0], node->idx[1]) = Vec3b(0, 0, 255);
 			}
 
-			cv::imshow("orig", orig);
+			// display them all
+			cv::imshow("orig", origBU);
 			cv::imshow("mask", mask);
-			cv::imshow("fill front", fillFront);
+			cv::imshow("result", result);
 			cv::waitKey(0);
 		} else {
 			cout << "Exit Selected!" << endl;
