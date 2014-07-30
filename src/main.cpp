@@ -3,9 +3,9 @@
 #include <fstream>
 #include <vector>
 #include <opencv2/opencv.hpp>
-#include "json11.hpp"
 #include "ncursesHelper.cpp"
 #include "choicesHelper.cpp"
+#include "mahv.cpp"
 
 using namespace std;
 
@@ -28,11 +28,13 @@ int main(int argc, char **argv) {
 		if (choice == 1) {
 			int choice = runCurses(bwcs, ss, benchChoices);
 			string benchName = benchChoices->at(choice - 1);
-			cv::Mat orig, mask;
+			cv::Mat orig, mask, fillFront;
 
 			getOrigMask(benchName, orig, mask);
 
-			cv::imshow("tst", mask);
+			fillFront = calculateFillFront(mask);
+			cv::imshow("mask", mask);
+			cv::imshow("fill front", fillFront);
 			cv::waitKey(0);
 		} else {
 			cout << "Exit Selected!" << endl;
