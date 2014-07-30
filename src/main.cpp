@@ -47,7 +47,8 @@ int main(int argc, char **argv) {
 				it_end = sparseFillFront.end();
 			for(; it != it_end; ++it) {
 				const SparseMat::Node *node = it.node();
-				origBU.at<Vec3b>(node->idx[0], node->idx[1]) = Vec3b(0, 0, 255);
+				int i = node->idx[0];
+				int j = node->idx[1];
 			}
 
 			// display them all
