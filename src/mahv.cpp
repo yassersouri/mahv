@@ -19,10 +19,31 @@ using namespace std;
 
 cv::Mat calculateFillFront(cv::Mat &mask);
 cv::SparseMat calculateSparseFillFront(cv::Mat &fillFront);
-void doMahv(cv::Mat orig, cv::Mat mask, cv::Mat &result, int windowSize);
-cv::SparseMat::Node calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat &confidence, cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int windowSize, float alpha);
+void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize);
+const cv::SparseMat::Node *calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat &confidence, cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int windowSize, float alpha);
 float calculateDataTerm(cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int i, int j, int offset, float alpha);
 float calculateConfidenceTerm(cv::Mat &confidence, int i, int j, int windowSize, int offset);
+void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int windowSize);
+
+void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int windowSize) {
+	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1;
+	orig.convertTo(origFloat, CV_32FC3);
+	int offset = windowSize / 2;
+	cv::copyMakeBorder(origFloat, image_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
+	cv::copyMakeBorder(mask, mask_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
+	mask_padded.convertTo(mask_max_1, CV_8UC1, 1./255, 0);
+	cv::subtract(cv::Scalar(1), mask_max_1, confidence);
+	confidence.convertTo(confidence, CV_32FC1);
+
+	for (int x = 0; x != mask_padded.rows; ++x) {
+		for (int y = 0; y != mask_padded.cols; ++y) {
+			if (mask_padded.at<unsigned char>(x, y) != 0) {
+				float conf_term = calculateConfidenceTerm(confidence, x, y, windowSize, offset);
+				confidence.at<float>(x, y) = conf_term;
+			}
+		}
+	}
+}
 
 cv::Mat calculateFillFront(cv::Mat &mask) {
 	cv::Mat diskElem = cv::Mat::ones(cv::Size(3, 3), CV_8UC1);
@@ -48,7 +69,7 @@ float calculateDataTerm(cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int 
 	float max_mod = 0, data_term;
 
 	for (int k = -offset; k <= offset; ++k) {
-		for (int l = -offset; k <= offset; ++l) {
+		for (int l = -offset; l <= offset; ++l) {
 			int n_i = i + k;
 			int n_j = j + l;
 			float mod = pow(dx.at<float>(n_i, n_j), 2) + pow(dy.at<float>(n_i, n_j), 2);
@@ -75,18 +96,17 @@ float calculateDataTerm(cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int 
 float calculateConfidenceTerm(cv::Mat &confidence, int i, int j, int windowSize, int offset) {
 	float conf_term = 0;
 	for (int k = -offset; k <= offset; ++k) {
-		for (int l = -offset; k <= offset; ++l) {
+		for (int l = -offset; l <= offset; ++l) {
 			conf_term += confidence.at<float>(i + k, j + l);
 		}
 	}
-	conf_term /= (windowSize * windowSize);
-
+	conf_term /= (float)(windowSize * windowSize);
 	return conf_term;
 }
 
-cv::SparseMat::Node calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat &confidence, cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int windowSize, float alpha=255) {
+const cv::SparseMat::Node *calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat &confidence, cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int windowSize, float alpha=255) {
 	float max_priority = -1;
-	cv::SparseMat::Node max_point;
+	const cv::SparseMat::Node *max_point;
 
 	int offset = windowSize / 2;
 	cv::SparseMat sparseFillFront = calculateSparseFillFront(fillFront);
@@ -121,7 +141,7 @@ cv::SparseMat::Node calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat &confi
 	return max_point;
 }
 
-void doMahv(cv::Mat orig, cv::Mat mask, cv::Mat &result, int windowSize = 9) {
+void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
 	cv::Mat temp; //FIXME: delete this line
 	result = cv::Mat::zeros(orig.rows, orig.cols, CV_8UC3);
@@ -144,10 +164,9 @@ void doMahv(cv::Mat orig, cv::Mat mask, cv::Mat &result, int windowSize = 9) {
 	cv::copyMakeBorder(mask, mask_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
 
 	//initial confidence
-	mask.convertTo(mask_max_1, CV_8UC1, 1./255, 0);
+	mask_padded.convertTo(mask_max_1, CV_8UC1, 1./255, 0);
 	cv::subtract(cv::Scalar(1), mask_max_1, confidence);
 	confidence.convertTo(confidence, CV_32FC1);
-
 	while( true ) {
 		fillFront = calculateFillFront(mask_max_1);
 
@@ -173,11 +192,12 @@ void doMahv(cv::Mat orig, cv::Mat mask, cv::Mat &result, int windowSize = 9) {
 		cv::Sobel(mask_padded, nx, CV_32F, 1, 0, 3, 1, 0, cv::BORDER_CONSTANT);
 		cv::Sobel(mask_padded, ny, CV_32F, 0, 1, 3, 1, 0, cv::BORDER_CONSTANT);
 
-		dx.setTo(cv::Scalar(0), mask);
-		dy.setTo(cv::Scalar(0), mask);
+//		dx.setTo(0, mask);
+//		dy.setTo(0, mask);
 
 		//calculate the point on the fill front with the maximum priority
-		cv::SparseMat::Node p = calculateMaxPriorityPoint(fillFront, confidence, dx, dy, nx, ny, windowSize, 255);
+		const cv::SparseMat::Node *p = calculateMaxPriorityPoint(fillFront, confidence, dx, dy, nx, ny, windowSize, 255);
+		break;
 	}
 
 	//FIXME: copy the non-padded parts of image_padded to result
