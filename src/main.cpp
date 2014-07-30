@@ -33,6 +33,18 @@ int main(int argc, char **argv) {
 			getOrigMask(benchName, orig, mask);
 
 			fillFront = calculateFillFront(mask);
+			cv::SparseMat sparseFillFront = calculateSparseFillFront(fillFront);
+
+			SparseMatConstIterator
+				it = sparseFillFront.begin(),
+				it_end = sparseFillFront.end();
+
+			for(; it != it_end; ++it) {
+				const SparseMat::Node *node = it.node();
+				orig.at<Vec3b>(node->idx[0], node->idx[1]) = Vec3b(0, 0, 255);
+			}
+
+			cv::imshow("orig", orig);
 			cv::imshow("mask", mask);
 			cv::imshow("fill front", fillFront);
 			cv::waitKey(0);
