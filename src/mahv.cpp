@@ -222,8 +222,8 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		cv::Sobel(mask_padded, nx, CV_32F, 1, 0, 3, 1, 0, cv::BORDER_CONSTANT);
 		cv::Sobel(mask_padded, ny, CV_32F, 0, 1, 3, 1, 0, cv::BORDER_CONSTANT);
 
-//		dx.setTo(0, mask);
-//		dy.setTo(0, mask);
+		dx.setTo(cv::Scalar(0), mask_padded);
+		dy.setTo(cv::Scalar(0), mask_padded);
 
 		//calculate the point on the fill front with the maximum priority
 		const cv::SparseMat::Node *p = calculateMaxPriorityPoint(fillFront, confidence, dx, dy, nx, ny, windowSize, 255);
