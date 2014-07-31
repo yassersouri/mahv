@@ -175,7 +175,11 @@ void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, c
 	int i_min = -1;
 	int j_min = -1;
 	float min_ssd = MAXFLOAT;
-	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdSquaredDiff;
+	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdSquaredDiff, maskTemplateInv, maskTemplateInvFloat, maskTemplateInvFloat3C;
+
+	cv::bitwise_not(maskTemplate, maskTemplateInv);
+	maskTemplateInv.convertTo(maskTemplateInvFloat, CV_32F);
+	cv::cvtColor(maskTemplateInvFloat, maskTemplateInvFloat3C, COLOR_GRAY2BGR);
 
 	cv::cvtColor(imageTemplate, imageTemplateCIE, COLOR_BGR2XYZ);
 	for(int k = offset; k < origCIE.rows - offset; ++k) {
@@ -193,6 +197,7 @@ void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, c
 			candidSourcePatch = origCIE.rowRange(k - offset, k + offset + 1)
 										.colRange(l - offset, l + offset + 1);
 			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
+			cv::multiply(ssdAbsDiff, maskTemplateInvFloat3C, ssdAbsDiff);
 			cv::multiply(ssdAbsDiff, ssdAbsDiff, ssdSquaredDiff);
 			cv::Scalar ssdSum = cv::sum(ssdSquaredDiff);
 			float ssd = ssdSum[0] + ssdSum[1] + ssdSum[2];
