@@ -16,6 +16,7 @@ Running the code
 ```
 cd build
 cmake ..
+make
 ./main.app
 ```
 
