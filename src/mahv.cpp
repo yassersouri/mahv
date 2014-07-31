@@ -25,7 +25,7 @@ float calculateDataTerm(cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int 
 float calculateConfidenceTerm(cv::Mat &confidence, int i, int j, int windowSize, int offset);
 void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int windowSize);
 void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha);
-void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, cv::Mat &maskTemplate, int i, int j, int windowSize, int offset, int &i_m, int &j_m);
+void findMinDiffPatch(cv::Mat &orig, cv::Mat &mask, cv::Mat &imageTemplate, cv::Mat &maskTemplate, int i, int j, int windowSize, int offset, int &i_m, int &j_m);
 
 void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha) {
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
@@ -171,15 +171,17 @@ const cv::SparseMat::Node *calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat
 	return max_point;
 }
 
-void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, cv::Mat &maskTemplate, int i, int j, int windowSize, int offset, int &i_m, int &j_m) {
+void findMinDiffPatch(cv::Mat &orig, cv::Mat &mask, cv::Mat &imageTemplate, cv::Mat &maskTemplate, int i, int j, int windowSize, int offset, int &i_m, int &j_m) {
 	int i_min = -1;
 	int j_min = -1;
 	float min_ssd = MAXFLOAT;
-	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdSquaredDiff;
-
-	cv::cvtColor(imageTemplate, imageTemplateCIE, COLOR_BGR2XYZ);
-	for(int k = offset; k < origCIE.rows - offset; ++k) {
-		for (int l = offset; l < origCIE.cols - offset; ++l) {
+	cv::Mat candidSourcePatch, ssdAbsDiff, ssdSquaredDiff, maskTemplateInv, maskTemplateInvMC, maskTemplateInvMCFloat;
+	cv::bitwise_not(maskTemplate, maskTemplateInv);
+	const cv::Mat masktempprep[3] = {maskTemplateInv, maskTemplateInv, maskTemplateInv};
+	cv::merge(masktempprep, 3, maskTemplateInvMC);
+	maskTemplateInvMC.convertTo(maskTemplateInvMCFloat, CV_32FC3);
+	for(int k = offset; k < orig.rows - offset; ++k) {
+		for (int l = offset; l < orig.cols - offset; ++l) {
 			//check that this candidate source patch does not have overlap with target patch
 			if (abs(k - i) < windowSize || abs(l - j) < windowSize) {
 				// target and source patch overlap
@@ -190,9 +192,10 @@ void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, c
 				// target region overlaps with masked region
 				continue;
 			}
-			candidSourcePatch = origCIE.rowRange(k - offset, k + offset + 1)
+			candidSourcePatch = orig.rowRange(k - offset, k + offset + 1)
 										.colRange(l - offset, l + offset + 1);
-			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
+			cv::absdiff(imageTemplate, candidSourcePatch, ssdAbsDiff);
+			cv::multiply(ssdAbsDiff, maskTemplateInvMCFloat, ssdAbsDiff);
 			cv::multiply(ssdAbsDiff, ssdAbsDiff, ssdSquaredDiff);
 			cv::Scalar ssdSum = cv::sum(ssdSquaredDiff);
 			float ssd = ssdSum[0] + ssdSum[1] + ssdSum[2];
@@ -209,7 +212,7 @@ void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, c
 }
 
 void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
-	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
+	cv::Mat origFloat, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
 	cv::Mat temp; //FIXME: delete this line
 	result = cv::Mat::zeros(orig.rows, orig.cols, CV_8UC3);
 
@@ -221,8 +224,6 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	orig.copyTo(result, maskInv);
 	// make a float version of orig image for calculating patch distance.
 	orig.convertTo(origFloat, CV_32FC3);
-	// make a CIE color version of input
-	cv::cvtColor(origFloat, origCIE, COLOR_BGR2XYZ);
 
 	int offset = windowSize / 2;
 
@@ -238,7 +239,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	while( true ) {
 		fillFront = calculateFillFront(mask_max_1);
 
-		if (cv::sum(fillFront) == cv::Scalar(0)) {
+		if (cv::sum(fillFront)[0] == 0) {
 			if (cv::sum(mask_max_1)[0] > 0) {
 				// if the remaining mask region is 1 pixel thick.
 				fillFront = mask_max_1;
@@ -272,19 +273,18 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		//get the patches around the found template
 		cv::Range targetRowRange_padded(i - offset, i + offset + 1);
 		cv::Range targetColRange_padded(j - offset, j + offset + 1);
-		//cv::circle(result, cv::Point(j - offset, i - offset), offset, cv::Scalar(0, 0, 255));
+//		cv::circle(result, cv::Point(j - offset, i - offset), offset, cv::Scalar(0, 0, 255));
 		imageTemplate = image_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded);
 		maskTemplate = mask_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded);
 
 		//find the best part in the source region of the image
 		int i_m, j_m;
-		findMinDiffPatch(origCIE, mask, imageTemplate, maskTemplate, i - offset, j - offset, windowSize, offset, i_m, j_m);
+		findMinDiffPatch(origFloat, mask, imageTemplate, maskTemplate, i - offset, j - offset, windowSize, offset, i_m, j_m);
 
 		if (i_m == -1 || j_m == -1) {
 			cout << "NO PATCH FOUND" << endl;
 			exit(1);
 		} else {
-			//cv::circle(result, cv::Point(j_m, i_m), offset, cv::Scalar(0, 0, 255));
 			cv::Range sourceRowRange(i_m - offset, i_m + offset + 1);
 			cv::Range sourceColRange(j_m - offset, j_m + offset + 1);
 			cv::Range sourceRowRange_padded(sourceRowRange.start + offset, sourceRowRange.end + offset);
@@ -293,7 +293,6 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 			cv::Range targetColRange(targetColRange_padded.start - offset, targetColRange_padded.end - offset);
 
 			result.rowRange(sourceRowRange).colRange(sourceColRange).copyTo(result.rowRange(targetRowRange).colRange(targetColRange));
-			origCIE.rowRange(sourceRowRange).colRange(sourceColRange).copyTo(origCIE.rowRange(targetRowRange).colRange(targetColRange));
 			image_padded.rowRange(sourceRowRange_padded).colRange(sourceColRange_padded).copyTo(image_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded));
 			mask.rowRange(targetRowRange).colRange(targetColRange).setTo(cv::Scalar(0));
 			mask_max_1.rowRange(targetRowRange).colRange(targetColRange).setTo(cv::Scalar(0));
@@ -302,12 +301,11 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		}
 		++iter;
 		cout << iter << endl;
-//		if (iter % 100 == 0) {
-//			cv::imshow("result", result);
-//			cv::imshow("mask", mask);
-//			cv::imshow("confidence", confidence);
-//			cv::waitKey(0);
-//		}
+		if (iter % 100 == 0) {
+			cv::imshow("result", result);
+			cv::imshow("mask", mask);
+			cv::waitKey(0);
+		}
 	}
 
 	//FIXME: copy the non-padded parts of image_padded to result
