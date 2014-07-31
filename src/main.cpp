@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
 
 			// display them all
 			cv::imshow("orig", origBU);
+			cv::imshow("mask", mask);
 			cv::imshow("result", result);
 			cv::waitKey(0);
 		} else {
