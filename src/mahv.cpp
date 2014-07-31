@@ -25,6 +25,7 @@ float calculateDataTerm(cv::Mat &dx, cv::Mat &dy, cv::Mat &nx, cv::Mat &ny, int 
 float calculateConfidenceTerm(cv::Mat &confidence, int i, int j, int windowSize, int offset);
 void visConfidence(cv::Mat &confidence, cv::Mat &orig, cv::Mat &mask, int windowSize);
 void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha);
+void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, cv::Mat &maskTemplate, int i, int j, int windowSize, int offset, int &i_m, int &j_m);
 
 void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha) {
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
@@ -170,6 +171,43 @@ const cv::SparseMat::Node *calculateMaxPriorityPoint(cv::Mat &fillFront, cv::Mat
 	return max_point;
 }
 
+void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, cv::Mat &maskTemplate, int i, int j, int windowSize, int offset, int &i_m, int &j_m) {
+	int i_min = -1;
+	int j_min = -1;
+	float max_ssd = MAXFLOAT;
+	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdSSD;
+
+	cv::cvtColor(imageTemplate, imageTemplateCIE, COLOR_BGR2XYZ);
+	for(int k = offset; k < origCIE.rows - offset; ++k) {
+		for (int l = offset; l < origCIE.cols - offset; ++l) {
+			//check that this candidate source patch does not have overlap with target patch
+			if (abs(k - i) < windowSize || abs(l - j) < windowSize) {
+				// target and source patch overlap
+				continue;
+			}
+			if (cv::sum(mask.rowRange(k - offset, k + offset + 1)
+							.colRange(l - offset, l + offset + 1))[0] > 0 ) {
+				// target region overlaps with masked region
+				continue;
+			}
+			candidSourcePatch = origCIE.rowRange(k - offset, k + offset + 1)
+										.colRange(l - offset, l + offset + 1);
+			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
+			cv::multiply(ssdAbsDiff, ssdAbsDiff, ssdSSD);
+			cv::Scalar ssdSum = cv::sum(ssdSSD);
+			float ssd = ssdSum[0] + ssdSum[1] + ssdSum[2];
+
+			if (ssd < max_ssd) {
+				max_ssd = ssd;
+				i_min = k;
+				j_min = l;
+			}
+		}
+	}
+	i_m = i_min;
+	j_m = j_min;
+}
+
 void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
 	cv::Mat temp; //FIXME: delete this line
@@ -214,7 +252,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		}
 
 		// convert image_padded to grayscale and calculate gradients
-		cv::Mat dx, dy, nx, ny, image_padded_gray;
+		cv::Mat dx, dy, nx, ny, image_padded_gray, imageTemplate, maskTemplate;
 		cv::cvtColor(image_padded, image_padded_gray, COLOR_BGR2GRAY);
 		cv::Sobel(image_padded_gray, dx, CV_32F, 1, 0, 3, 1, 0, cv::BORDER_CONSTANT);
 		cv::Sobel(image_padded_gray, dy, CV_32F, 0, 1, 3, -1, 0, cv::BORDER_CONSTANT);
@@ -227,8 +265,20 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		//calculate the point on the fill front with the maximum priority
 		const cv::SparseMat::Node *p = calculateMaxPriorityPoint(fillFront, confidence, dx, dy, nx, ny, windowSize, 255);
 
-		//find the best patch to place here
+		int i = p->idx[0];
+		int j = p->idx[1];
 
+		//get the patches around the found template
+		cv::circle(result, cv::Point(j - offset, i - offset), offset, cv::Scalar(0, 0, 255));
+		imageTemplate = image_padded.rowRange(i - offset, i + offset + 1).colRange(j - offset, j + offset + 1);
+		maskTemplate = mask_padded.rowRange(i - offset, i + offset + 1).colRange(j - offset, j + offset + 1);
+
+		//find the best part in the source region of the image
+		int i_m, j_m;
+		findMinDiffPatch(origCIE, mask, imageTemplate, maskTemplate, i - offset, j - offset, windowSize, offset, i_m, j_m);
+
+		cv::circle(result, cv::Point(j_m, i_m), offset, cv::Scalar(0, 0, 255));
+		break;
 	}
 
 	//FIXME: copy the non-padded parts of image_padded to result
