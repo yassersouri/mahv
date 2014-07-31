@@ -181,10 +181,10 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	orig.setTo(cv::Scalar(0), mask);
 	// copy non masked part of orig to result
 	orig.copyTo(result, maskInv);
-	// make a CIE color version of input
-	cv::cvtColor(orig, origCIE, COLOR_BGR2XYZ);
 	// make a float version of orig image for calculating patch distance.
 	orig.convertTo(origFloat, CV_32FC3);
+	// make a CIE color version of input
+	cv::cvtColor(origFloat, origCIE, COLOR_BGR2XYZ);
 
 	int offset = windowSize / 2;
 
