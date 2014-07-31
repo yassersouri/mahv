@@ -28,7 +28,6 @@ void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize
 
 void visDataTerm(cv::Mat &dataTerm, cv::Mat &orig, cv::Mat &mask, int windowSize, float alpha) {
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
-//	orig.setTo(cv::Scalar(0), mask);
 	orig.convertTo(origFloat, CV_32FC3);
 	int offset = windowSize / 2;
 	cv::copyMakeBorder(origFloat, image_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
@@ -229,6 +228,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		const cv::SparseMat::Node *p = calculateMaxPriorityPoint(fillFront, confidence, dx, dy, nx, ny, windowSize, 255);
 
 		//find the best patch to place here
+
 	}
 
 	//FIXME: copy the non-padded parts of image_padded to result
