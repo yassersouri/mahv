@@ -307,12 +307,12 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		}
 		++iter;
 		cout << iter << endl;
-//		if (iter % 100 == 0) {
-//			cv::imshow("result", result);
-//			cv::imshow("mask", mask);
-//			cv::imshow("confidence", confidence);
-//			cv::waitKey(0);
-//		}
+		if (iter % 100 == 0) {
+			cv::imshow("result", result);
+			cv::imshow("mask", mask);
+			cv::imshow("confidence", confidence);
+			cv::waitKey(0);
+		}
 	}
 
 	//FIXME: copy the non-padded parts of image_padded to result
