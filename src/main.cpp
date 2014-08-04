@@ -28,10 +28,11 @@ int main(int argc, char **argv) {
 		if (choice == 1) {
 			int choice = runCurses(bwcs, ss, benchChoices);
 			string benchName = benchChoices->at(choice - 1);
-			cv::Mat orig, mask, result, origBU;
+			cv::Mat orig, mask, mask255, result, origBU;
 
 			// retrieve the original image and mask from the benchmark set.
-			getOrigMask(benchName, orig, mask);
+			// mask255 is for display purposes.
+			getOrigMask(benchName, orig, mask, mask255);
 
 			//back up the original image
 			orig.copyTo(origBU);

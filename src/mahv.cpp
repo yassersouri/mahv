@@ -214,8 +214,10 @@ void findMinDiffPatch(cv::Mat &origCIE, cv::Mat &mask, cv::Mat &imageTemplate, c
 }
 
 void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
+	// windowSize must be odd
+	assert(windowSize % 2 == 1);
+
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, mask_max_1, confidence;
-	cv::Mat temp; //FIXME: delete this line
 	result = cv::Mat::zeros(orig.rows, orig.cols, CV_8UC3);
 
 	// calculate inverse of the mask

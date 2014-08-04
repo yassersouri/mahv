@@ -38,8 +38,9 @@ vector<string> *getMainChoices() {
 	return mainChoices;
 }
 
-void getOrigMask(string benchName, cv::Mat &orig, cv::Mat &mask) {
+void getOrigMask(string benchName, cv::Mat &orig, cv::Mat &mask, cv::Mat &mask255) {
 	orig = cv::imread(BASE_BENCH_ADR + benchName + ORIG_APPEND);
 	cv::Mat maskImg = cv::imread(BASE_BENCH_ADR + benchName + MASK_APPEND);
-	extractMaskFromBench(maskImg, mask, 224, 31, 255);
+	extractMaskFromBench(maskImg, mask);
+	extractMaskFromBench(maskImg, mask255, 255);
 }

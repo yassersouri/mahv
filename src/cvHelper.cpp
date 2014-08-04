@@ -2,7 +2,7 @@
 
 using namespace cv;
 
-void extractMaskFromBench(Mat &maskImg, Mat &mask, unsigned char red_color_min=224, unsigned char other_color_max=31, unsigned char mask_val=255) {
+void extractMaskFromBench(Mat &maskImg, Mat &mask, unsigned char mask_val=1, unsigned char red_color_min=224, unsigned char other_color_max=31) {
 	mask = cv::Mat::zeros(maskImg.size(), CV_8UC1);
 
 	for (int i = 0; i < maskImg.rows; ++i) {
