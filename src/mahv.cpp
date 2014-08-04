@@ -198,17 +198,15 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 				// target and source patch overlap
 				continue;
 			}
-
 			cv::Range candidSourceRowRange = cv::Range(k - offset, k + offset + 1);
 			cv::Range candidSourceColRange = cv::Range(l - offset, l + offset + 1);
-
 
 			if (cv::sum(mask_padded.rowRange(candidSourceRowRange)
 								   .colRange(candidSourceColRange))[0] > 0 ) {
 				// target region overlaps with masked region
 				continue;
 			}
-			candidSourcePatch = image_padded.rowRange(candidSourceColRange)
+			candidSourcePatch = image_padded.rowRange(candidSourceRowRange)
 											.colRange(candidSourceColRange);
 			// calculate the absolute diff between source patch and target patch
 			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
@@ -302,7 +300,6 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 		// calculate the point on the fill front with the maximum priority
 		const cv::SparseMat::Node *p = calculateMaxPriorityPoint(fillFront_padded, confidence_padded, dx, dy, nx, ny, windowSize, 1 * 255);
-
 		// indices of the pixel on the fill front with maximum priority
 		int i = p->idx[0];
 		int j = p->idx[1];
@@ -323,9 +320,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 		//find the best part in the source region of the image
 		int i_m, j_m;
-
 		findMinDiffPatch(image_padded, mask_padded, imageTemplate, maskTemplate, i, j, windowSize, offset, i_m, j_m);
-
 		// get the patch around the source
 		cv::Range sourceRowRange_padded(i_m - offset, i_m + offset + 1);
 		cv::Range sourceColRange_padded(j_m - offset, j_m + offset + 1);
@@ -334,7 +329,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 			cout << "NO PATCH FOUND" << endl;
 			exit(1);
 		} else {
-			cv::circle(image_temp, cv::Point(j_m, i_m), offset, cv::Scalar(0, 0, 255));
+			cv::circle(image_temp, cv::Point(j_m, i_m), offset, cv::Scalar(30, 215, 240));
 			cv::imshow("result", image_temp);
 			cv::waitKey(0);
 
@@ -345,7 +340,8 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		++iter;
 		cout << iter << endl;
 		if (iter % 1 == 0) {
-			cv::imshow("result", image_padded);
+			image_padded.convertTo(image_temp, CV_8U);
+			cv::imshow("result", image_temp);
 			mask_padded.convertTo(mask_temp, CV_8UC1, 255, 0);
 			cv::imshow("mask", mask_temp);
 			cv::imshow("confidence", confidence_padded);
