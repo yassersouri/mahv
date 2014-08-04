@@ -222,6 +222,9 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	assert(windowSize % 2 == 1);
 
 	cv::Mat origFloat, origCIE, maskInv, fillFront, image_padded, mask_padded, confidence;
+	// FIXME: remove the following line
+	cv::Mat mask_temp, image_temp, fillfront_temp;
+
 	result = cv::Mat::zeros(orig.rows, orig.cols, CV_8UC3);
 
 	// calculate inverse of the mask
@@ -247,6 +250,10 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	int iter = 0;
 	while( true ) {
 		fillFront = calculateFillFront(mask);
+
+		// FIXME: delete these
+		fillFront.convertTo(fillfront_temp, CV_8UC1, 255, 0);
+		cv::imshow("fillfront", fillfront_temp);
 
 		if (cv::sum(fillFront)[0] == 0) {
 			if (cv::sum(mask)[0] > 0) {
@@ -280,7 +287,10 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 		int i = p->idx[0];
 		int j = p->idx[1];
 
-//		cv::circle(result, cv::Point(j - offset, i - offset), offset, cv::Scalar(0, 0, 255));
+		result.copyTo(image_temp);
+		cv::circle(image_temp, cv::Point(j - offset, i - offset), offset, cv::Scalar(0, 0, 255));
+		cv::imshow("result", image_temp);
+		cv::waitKey(0);
 
 		// get the patch around the target
 		cv::Range targetRowRange_padded(i - offset, i + offset + 1);
@@ -304,19 +314,23 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 			cout << "NO PATCH FOUND" << endl;
 			exit(1);
 		} else {
-			//cv::circle(result, cv::Point(j_m, i_m), offset, cv::Scalar(0, 0, 255));
+			cv::circle(image_temp, cv::Point(j_m, i_m), offset, cv::Scalar(0, 0, 255));
+			cv::imshow("result", image_temp);
+			cv::waitKey(0);
+
 			result.rowRange(sourceRowRange).colRange(sourceColRange).copyTo(result.rowRange(targetRowRange).colRange(targetColRange));
 			origCIE.rowRange(sourceRowRange).colRange(sourceColRange).copyTo(origCIE.rowRange(targetRowRange).colRange(targetColRange));
 			image_padded.rowRange(sourceRowRange_padded).colRange(sourceColRange_padded).copyTo(image_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded));
 			mask.rowRange(targetRowRange).colRange(targetColRange).setTo(cv::Scalar(0));
 			mask_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded).setTo(cv::Scalar(0));
-			confidence.rowRange(targetRowRange_padded).colRange(targetColRange_padded).setTo(confidence.at<float>(i, j));
+			confidence.rowRange(targetRowRange).colRange(targetColRange).setTo(confidence.at<float>(i, j));
 		}
 		++iter;
 		cout << iter << endl;
-		if (iter % 10 == 0) {
+		if (iter % 1 == 0) {
 			cv::imshow("result", result);
-			cv::imshow("mask", mask);
+			mask.convertTo(mask_temp, CV_8UC1, 255, 0);
+			cv::imshow("mask", mask_temp);
 			cv::imshow("confidence", confidence);
 			cv::waitKey(0);
 		}
