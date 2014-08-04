@@ -180,13 +180,13 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 	int j_min = -1;
 	float min_ssd = MAXFLOAT;
 	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdSquaredDiff;
-	cv::Mat maskTemplateInv, maskTemplateInvFloat, maskTemplateInvFloat3C;
+	cv::Mat maskTemplateInv, maskTemplateInvFloat, maskTemplateInv3C;
 
 	// we want the inverse of mask's template
 	// because the mask template's value is 1 at masked points we cannot use bitwise_not for finding its inverse.
 	maskTemplate.convertTo(maskTemplateInv, CV_32F, -1, 1);
 	// make the inverse of mask template 3 channels! each channel the same as the other two!
-	cv::cvtColor(maskTemplateInvFloat, maskTemplateInvFloat3C, COLOR_GRAY2BGR);
+	cv::cvtColor(maskTemplateInv, maskTemplateInv3C, COLOR_GRAY2BGR);
 
 	// prepare the image template to calculate the SSD
 	cv::cvtColor(imageTemplate, imageTemplateCIE, COLOR_BGR2XYZ);
@@ -213,7 +213,7 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 			// calculate the absolute diff between source patch and target patch
 			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
 			// multiply the result by inverse of mask to only consider out of mask regions in calculating the ssd.
-			cv::multiply(ssdAbsDiff, maskTemplateInvFloat3C, ssdAbsDiff);
+			cv::multiply(ssdAbsDiff, maskTemplateInv3C, ssdAbsDiff);
 			// now calculate squared of absolute diff
 			cv::multiply(ssdAbsDiff, ssdAbsDiff, ssdSquaredDiff);
 			// calculate the sum, in each of 3 channels
@@ -323,6 +323,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 		//find the best part in the source region of the image
 		int i_m, j_m;
+
 		findMinDiffPatch(image_padded, mask_padded, imageTemplate, maskTemplate, i, j, windowSize, offset, i_m, j_m);
 
 		// get the patch around the source
