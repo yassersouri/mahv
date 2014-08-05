@@ -179,8 +179,8 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 	int i_min = -1;
 	int j_min = -1;
 	float min_ssd = MAXFLOAT;
-	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdSquaredDiff;
-	cv::Mat maskTemplateInv, maskTemplateInvFloat, maskTemplateInv3C;
+	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdAbsDiffFiltered, ssdSquaredDiff;
+	cv::Mat maskTemplateInv, maskTemplateInv3C;
 
 	// we want the inverse of mask's template
 	// because the mask template's value is 1 at masked points we cannot use bitwise_not for finding its inverse.
@@ -211,7 +211,7 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 			// calculate the absolute diff between source patch and target patch
 			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
 			// multiply the result by inverse of mask to only consider out of mask regions in calculating the ssd.
-			cv::multiply(ssdAbsDiff, maskTemplateInv3C, ssdAbsDiff);
+			ssdAbsDiff.setTo(cv::Scalar(0), maskTemplate);
 			// now calculate squared of absolute diff
 			cv::multiply(ssdAbsDiff, ssdAbsDiff, ssdSquaredDiff);
 			// calculate the sum, in each of 3 channels
@@ -279,8 +279,6 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 				// just checking it for my self
 				cout << "URGENT CHECK IF THIS IS CORRECT" << endl;
-				cv::imshow("fillFront", fillFront_padded);
-				cv::waitKey(0);
 			} else {
 				break;
 			}
