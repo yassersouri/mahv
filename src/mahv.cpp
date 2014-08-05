@@ -236,7 +236,10 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 	cv::Mat origFloat, origCIE, origCIE_padded, maskInv, fillFront_padded, image_padded, mask_padded, confidence, confidence_padded;
 	// FIXME: remove the following line
+
 	cv::Mat mask_temp, image_temp, fillfront_temp;
+	bool urgent = false;
+
 
 	result = cv::Mat::zeros(orig.rows, orig.cols, CV_8UC3);
 
@@ -277,9 +280,8 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 			if (cv::sum(mask)[0] > 0) {
 				// if the remaining mask region is 1 pixel thick.
 				fillFront_padded = mask_padded;
-
-				// just checking it for my self
-				cout << "URGENT CHECK IF THIS IS CORRECT" << endl;
+				//FIXME: this is temporary. try to find a way around this.
+				break;
 			} else {
 				break;
 			}
@@ -348,6 +350,10 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 			cv::waitKey(0);
 		}
 	}
+	//copy the non-padded parts of image_padded to result
+	image_padded.rowRange(offset, image_padded.rows - offset).colRange(offset, image_padded.cols - offset)
+			.copyTo(result);
+	result.convertTo(result, CV_8U);
 
-	//FIXME: copy the non-padded parts of image_padded to result
+	cv::destroyAllWindows();
 }
