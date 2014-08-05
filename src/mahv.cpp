@@ -180,13 +180,13 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 	int j_min = -1;
 	float min_ssd = MAXFLOAT;
 	cv::Mat imageTemplateCIE, candidSourcePatch, ssdAbsDiff, ssdAbsDiffFiltered, ssdSquaredDiff;
-	cv::Mat maskTemplateInv, maskTemplateInv3C;
+	cv::Mat maskTemplateInvFloat ,maskTemplateInv3C;
 
 	// we want the inverse of mask's template
 	// because the mask template's value is 1 at masked points we cannot use bitwise_not for finding its inverse.
-	maskTemplate.convertTo(maskTemplateInv, CV_32F, -1, 1);
+	maskTemplate.convertTo(maskTemplateInvFloat, CV_32F, -1, 1);
 	// make the inverse of mask template 3 channels! each channel the same as the other two!
-	cv::cvtColor(maskTemplateInv, maskTemplateInv3C, COLOR_GRAY2BGR);
+	cv::cvtColor(maskTemplateInvFloat, maskTemplateInv3C, COLOR_GRAY2BGR);
 
 	// prepare the image template to calculate the SSD
 	cv::cvtColor(imageTemplate, imageTemplateCIE, COLOR_BGR2XYZ);
@@ -211,7 +211,7 @@ void findMinDiffPatch(cv::Mat &image_padded, cv::Mat &mask_padded, cv::Mat &imag
 			// calculate the absolute diff between source patch and target patch
 			cv::absdiff(imageTemplateCIE, candidSourcePatch, ssdAbsDiff);
 			// multiply the result by inverse of mask to only consider out of mask regions in calculating the ssd.
-			ssdAbsDiff.setTo(cv::Scalar(0), maskTemplate);
+			cv::multiply(ssdAbsDiff, maskTemplateInv3C, ssdAbsDiff);
 			// now calculate squared of absolute diff
 			cv::multiply(ssdAbsDiff, ssdAbsDiff, ssdSquaredDiff);
 			// calculate the sum, in each of 3 channels
@@ -234,7 +234,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	// windowSize must be odd
 	assert(windowSize % 2 == 1);
 
-	cv::Mat origFloat, origCIE, maskInv, fillFront_padded, image_padded, mask_padded, confidence, confidence_padded;
+	cv::Mat origFloat, origCIE, origCIE_padded, maskInv, fillFront_padded, image_padded, mask_padded, confidence, confidence_padded;
 	// FIXME: remove the following line
 	cv::Mat mask_temp, image_temp, fillfront_temp;
 
@@ -256,6 +256,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 	//padding
 	cv::copyMakeBorder(origFloat, image_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
 	cv::copyMakeBorder(mask, mask_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
+	cv::copyMakeBorder(origCIE, origCIE_padded, offset, offset, offset, offset, cv::BORDER_CONSTANT, cv::Scalar(0));
 
 	//initial confidence, confidence is (1 - mask) which is maskInv.
 	maskInv.convertTo(confidence, CV_32FC1);
@@ -318,7 +319,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 
 		//find the best part in the source region of the image
 		int i_m, j_m;
-		findMinDiffPatch(image_padded, mask_padded, imageTemplate, maskTemplate, i, j, windowSize, offset, i_m, j_m);
+		findMinDiffPatch(origCIE_padded, mask_padded, imageTemplate, maskTemplate, i, j, windowSize, offset, i_m, j_m);
 		// get the patch around the source
 		cv::Range sourceRowRange_padded(i_m - offset, i_m + offset + 1);
 		cv::Range sourceColRange_padded(j_m - offset, j_m + offset + 1);
@@ -332,6 +333,7 @@ void doMahv(cv::Mat &orig, cv::Mat &mask, cv::Mat &result, int windowSize = 9) {
 			cv::waitKey(0);
 
 			image_padded.rowRange(sourceRowRange_padded).colRange(sourceColRange_padded).copyTo(image_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded));
+			origCIE_padded.rowRange(sourceRowRange_padded).colRange(sourceColRange_padded).copyTo(origCIE_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded));
 			mask_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded).setTo(cv::Scalar(0));
 			confidence_padded.rowRange(targetRowRange_padded).colRange(targetColRange_padded).setTo(confidence_padded.at<float>(i, j));
 		}
